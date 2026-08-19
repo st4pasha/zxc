@@ -14,6 +14,8 @@ type Product struct {
 	description string  // название товара
 }
 
+var sliceProducts []Product
+
 func main() {
 	Products, err := Products("1,молоко,150,Простоквашино")
 	if err != nil {
@@ -21,36 +23,35 @@ func main() {
 		return
 	}
 
-	fmt.Println(Products)
+	sliceProducts = append(sliceProducts, Products)
+	fmt.Println(sliceProducts)
 }
 
-func Products(str string) ([]Product, error) {
+func Products(str string) (Product, error) {
 
 	sliceStr := strings.Split(str, ",")
 	if len(sliceStr) < 4 {
-		return nil, errors.New("Недостаточно данных")
+		return Product{}, errors.New("Недостаточно данных")
 	}
 
 	id, err := strconv.Atoi(sliceStr[0])
 	if err != nil {
-		fmt.Println("Error -", err)
-		return nil, err
+		return Product{}, err
 	}
 
 	price, err := strconv.ParseFloat(sliceStr[2], 64)
 	if err != nil {
-		fmt.Println("Error !!! -", err)
-		return nil, err
+		return Product{}, err
 	}
 
 	product, err := CreateProduct(id, sliceStr[1], price, sliceStr[3])
 
 	if err != nil {
 		fmt.Println("Произошла ошибка при инициализации продукта.")
-		return nil, err
+		return Product{}, err
 	}
 
-	return []Product{product}, nil
+	return product, nil
 }
 
 func CreateProduct(id int, name string, price float64, description string) (Product, error) {
