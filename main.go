@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	errors1 "gostudy/errors"
 	"strconv"
 	"strings"
 )
@@ -17,21 +17,20 @@ type Product struct {
 var sliceProducts []Product
 
 func main() {
-	Products, err := Products("1,молоко,150,Простоквашино")
+	products, err := parseProduct("1,молоко,150,Простоквашино")
 	if err != nil {
 		fmt.Println("Error !!! -", err)
 		return
 	}
-
-	sliceProducts = append(sliceProducts, Products)
+	sliceProducts = append(sliceProducts, products)
 	fmt.Println(sliceProducts)
 }
 
-func Products(str string) (Product, error) {
+func parseProduct(str string) (Product, error) {
 
 	sliceStr := strings.Split(str, ",")
 	if len(sliceStr) < 4 {
-		return Product{}, errors.New("Недостаточно данных")
+		return Product{}, errors1.ErrMissData
 	}
 
 	id, err := strconv.Atoi(sliceStr[0])
@@ -44,32 +43,28 @@ func Products(str string) (Product, error) {
 		return Product{}, err
 	}
 
-	product, err := CreateProduct(id, sliceStr[1], price, sliceStr[3])
-
-	if err != nil {
-		fmt.Println("Произошла ошибка при инициализации продукта.")
+	if err := validProduct(id, sliceStr[1], price, sliceStr[3]); err != nil {
 		return Product{}, err
 	}
 
-	return product, nil
+	return Product{id, sliceStr[1], price, sliceStr[3]}, nil
 }
 
-func CreateProduct(id int, name string, price float64, description string) (Product, error) {
+func validProduct(id int, name string, price float64, description string) error {
 	if id == 0 {
-		return Product{}, errors.New("Неправильно переданный id")
+		return errors1.ErrNotFound
 	}
 
 	if name == "" {
-		return Product{}, errors.New("Неправильно переданное имя")
+		return errors1.ErrNotFound
 	}
 
 	if price <= 0 {
-		return Product{}, errors.New("Неправильно переданная цена за товар.")
+		return errors1.ErrNotFound
 	}
-
 	if description == "" {
-		return Product{}, errors.New("Неправильно переданое описание товара.")
+		return errors1.ErrNotFound
 	}
 
-	return Product{id, name, price, description}, nil
+	return nil
 }
