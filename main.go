@@ -17,34 +17,38 @@ type Product struct {
 }
 
 func main() {
-	products, err := parseProduct("1,молоко,150,Простоквашино")
+	product, err := parseProduct("1,молоко,150,Простоквашино")
 	if err != nil {
 		fmt.Println("Error !!! -", err)
 		return
 	}
 
-	fmt.Println(products)
+	fmt.Println(product)
 }
 
 func parseProduct(str string) (Product, error) {
 
 	sliceStr := strings.Split(str, ",")
 	if len(sliceStr) < 4 {
-		return Product{}, errors.ErrMissingData
+		return Product{}, stderrors.Wrap(
+			errors.ErrMissingData,
+			"string must contain at least 4 comma-separated values",
+		)
+
 	}
 
 	id, err := strconv.Atoi(sliceStr[0])
 	if err != nil {
-		return Product{}, err
+		return Product{}, stderrors.Wrap(err, "conversion error")
 	}
 
 	price, err := strconv.ParseFloat(sliceStr[2], 64)
 	if err != nil {
-		return Product{}, err
+		return Product{}, stderrors.Wrap(err, "conversion error")
 	}
 
 	if err := validProduct(id, sliceStr[1], price, sliceStr[3]); err != nil {
-		return Product{}, err
+		return Product{}, stderrors.Wrap(err, "error with valid")
 	}
 
 	return Product{id, sliceStr[1], price, sliceStr[3]}, nil
