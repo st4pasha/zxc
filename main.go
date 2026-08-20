@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	errors1 "gostudy/errors"
+	"gostudy/errors"
 	"strconv"
 	"strings"
+
+	stderrors "github.com/pkg/errors"
 )
 
 type Product struct {
@@ -14,23 +16,21 @@ type Product struct {
 	description string  // название товара
 }
 
-var sliceProducts []Product
-
 func main() {
 	products, err := parseProduct("1,молоко,150,Простоквашино")
 	if err != nil {
 		fmt.Println("Error !!! -", err)
 		return
 	}
-	sliceProducts = append(sliceProducts, products)
-	fmt.Println(sliceProducts)
+
+	fmt.Println(products)
 }
 
 func parseProduct(str string) (Product, error) {
 
 	sliceStr := strings.Split(str, ",")
 	if len(sliceStr) < 4 {
-		return Product{}, errors1.ErrMissData
+		return Product{}, errors.ErrMissingData
 	}
 
 	id, err := strconv.Atoi(sliceStr[0])
@@ -52,18 +52,18 @@ func parseProduct(str string) (Product, error) {
 
 func validProduct(id int, name string, price float64, description string) error {
 	if id == 0 {
-		return errors1.ErrNotFound
+		return stderrors.Wrap(errors.ErrParse, "id zero")
 	}
 
 	if name == "" {
-		return errors1.ErrNotFound
+		return stderrors.Wrap(errors.ErrParse, "invalid name")
 	}
 
 	if price <= 0 {
-		return errors1.ErrNotFound
+		return stderrors.Wrap(errors.ErrParse, "incorrect price")
 	}
 	if description == "" {
-		return errors1.ErrNotFound
+		return stderrors.Wrap(errors.ErrParse, "invalid description")
 	}
 
 	return nil
