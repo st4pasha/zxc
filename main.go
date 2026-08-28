@@ -1,10 +1,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"gostudy/errors"
 	"strconv"
 	"strings"
+
+	stderrors "github.com/pkg/errors"
 )
 
 type Product struct {
@@ -14,62 +16,59 @@ type Product struct {
 	description string  // название товара
 }
 
-var sliceProducts []Product
-
 func main() {
-	Products, err := Products("1,молоко,150,Простоквашино")
+	product, err := parseProduct("1,молоко,150,Простоквашино")
 	if err != nil {
 		fmt.Println("Error !!! -", err)
 		return
 	}
 
-	sliceProducts = append(sliceProducts, Products)
-	fmt.Println(sliceProducts)
+	fmt.Println(product)
 }
 
-func Products(str string) (Product, error) {
+func parseProduct(str string) (Product, error) {
 
 	sliceStr := strings.Split(str, ",")
 	if len(sliceStr) < 4 {
-		return Product{}, errors.New("Недостаточно данных")
+		return Product{}, stderrors.Wrap(
+			errors.ErrMissingData,
+			"string must contain at least 4 comma-separated values",
+		)
+
 	}
 
 	id, err := strconv.Atoi(sliceStr[0])
 	if err != nil {
-		return Product{}, err
+		return Product{}, stderrors.Wrap(err, "conversion error")
 	}
 
 	price, err := strconv.ParseFloat(sliceStr[2], 64)
 	if err != nil {
-		return Product{}, err
+		return Product{}, stderrors.Wrap(err, "conversion error")
 	}
 
-	product, err := CreateProduct(id, sliceStr[1], price, sliceStr[3])
-
-	if err != nil {
-		fmt.Println("Произошла ошибка при инициализации продукта.")
-		return Product{}, err
+	if err := validProduct(id, sliceStr[1], price, sliceStr[3]); err != nil {
+		return Product{}, stderrors.Wrap(err, "error with valid")
 	}
 
-	return product, nil
+	return Product{id, sliceStr[1], price, sliceStr[3]}, nil
 }
 
-func CreateProduct(id int, name string, price float64, description string) (Product, error) {
+func validProduct(id int, name string, price float64, description string) error {
 	if id == 0 {
-		return Product{}, errors.New("Неправильно переданный id")
+		return stderrors.Wrap(errors.ErrParse, "id zero")
 	}
 
 	if name == "" {
-		return Product{}, errors.New("Неправильно переданное имя")
+		return stderrors.Wrap(errors.ErrParse, "invalid name")
 	}
 
 	if price <= 0 {
-		return Product{}, errors.New("Неправильно переданная цена за товар.")
+		return stderrors.Wrap(errors.ErrParse, "incorrect price")
 	}
-
 	if description == "" {
-		return Product{}, errors.New("Неправильно переданое описание товара.")
+		return stderrors.Wrap(errors.ErrParse, "invalid description")
 	}
 
-	return Product{id, name, price, description}, nil
+	return nil
 }
