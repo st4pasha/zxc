@@ -5,6 +5,7 @@ import (
 	"gostudy/errors"
 	"strconv"
 	"strings"
+	"sync"
 
 	stderrors "github.com/pkg/errors"
 )
@@ -16,19 +17,22 @@ type Product struct {
 	description string  // название товара
 }
 
+var mtx = sync.Mutex{}
+var productsStrSlice = []string{"1,молоко,150,Простоквашино", "2,вода,100,Дарида"}
+
 func main() {
-	product, err := parseProduct("1,молоко,150,Простоквашино")
+	sliceProducts, err := toProducts(productsStrSlice)
 	if err != nil {
-		fmt.Println("Error !!! -", err)
+		fmt.Println("error,", err)
 		return
 	}
 
-	fmt.Println(product)
+	fmt.Println(sliceProducts)
 }
 
-func parseProduct(str string) (Product, error) {
+func parseProduct(str []string, index int) (Product, error) {
 
-	sliceStr := strings.Split(str, ",")
+	sliceStr := strings.Split(str[index], ",")
 	if len(sliceStr) < 4 {
 		return Product{}, stderrors.Wrap(
 			errors.ErrMissingData,
@@ -71,4 +75,19 @@ func validProduct(id int, name string, price float64, description string) error 
 	}
 
 	return nil
+}
+
+func toProducts(productsStrSlice []string) ([]Product, error) {
+	mtx.Lock()
+	sliceProduct := []Product{}
+	for i := 0; i < len(productsStrSlice); i++ {
+		product, err := parseProduct(productsStrSlice, i)
+		if err != nil {
+			return []Product{}, stderrors.Wrap(err, "error with parse")
+		}
+		sliceProduct = append(sliceProduct, product)
+	}
+	mtx.Unlock()
+
+	return sliceProduct, nil
 }
